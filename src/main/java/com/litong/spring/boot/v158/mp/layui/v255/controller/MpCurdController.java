@@ -1,6 +1,7 @@
 package com.litong.spring.boot.v158.mp.layui.v255.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,41 +27,61 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MpCurdController<Service extends IService<Entity>, Entity> {
   @Autowired
-  private Service service;
+  private Service s;
 
   @RequestMapping("list")
   public PageJsonBean<Entity> list(@RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
       @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, Entity e) {
     e = LReflectionUtils.convertEmpytStringToNull(e);
     log.info("pageSize:{},pageNo:{},e {}", pageSize, pageNo, e);
-    QueryWrapper<Entity> queryWrapper = new QueryWrapper<>(e);
+    Map<String, Object> map = LReflectionUtils.convertObjectToMap(e);
+    QueryWrapper<Entity> queryWrapper = new QueryWrapper<>();
+    for (Map.Entry<String, Object> m : map.entrySet()) {
+      if (m.getKey().equals("id")) {
+        queryWrapper.eq("id", m.getValue());
+      } else {
+        queryWrapper.like(m.getKey(), m.getValue());
+      }
+    }
+
     Page<Entity> page = new Page<>(pageNo, pageSize);
-    IPage<Entity> result = service.page(page, queryWrapper);
+    IPage<Entity> result = s.page(page, queryWrapper);
     PageJsonBean<Entity> pageJsonBean = new PageJsonBean<>(result);
     return pageJsonBean;
   }
 
-  @RequestMapping("get")
+  @RequestMapping("listColumn")
+  public JsonBean<List<Entity>> listColumn(String column, Entity e) {
+    String mName = "listColumn";
+    log.info("{},column {} entity {}", mName, column, e);
+    QueryWrapper<Entity> queryWrapper = new QueryWrapper<Entity>();
+    queryWrapper.select("id", column);
+    Map<String, Object> map = LReflectionUtils.convertObjectToMap(e);
+    for (Map.Entry<String, Object> m : map.entrySet()) {
+      if (m.getKey().equals("id")) {
+        queryWrapper.eq("id", m.getValue());
+      } else {
+        queryWrapper.like(m.getKey(), m.getValue());
+      }
+    }
+    List<Entity> list = s.list(queryWrapper);
+    JsonBean<List<Entity>> jsonBean = new JsonBean<>(list);
+    return jsonBean;
+  }
+
+  @RequestMapping("getById")
   public JsonBean<Entity> get(Integer id) {
     log.info("get by id {}", id);
-    Entity byId = service.getById(id);
+    Entity byId = s.getById(id);
     JsonBean<Entity> jsonBean = new JsonBean<>(byId);
     return jsonBean;
   }
 
-  @RequestMapping("del")
+  @RequestMapping("removeById")
   public JsonBean<Void> del(Integer id) {
     String methodName = "delete";
     log.info("{} by id {}", methodName, id);
-    boolean b = service.removeById(id);
-    return buildJsonBean(methodName, b);
-  }
-
-  @RequestMapping("saveOrUpdate")
-  public JsonBean<Void> saveOrUpdate(Entity e) {
-    String methodName = "saveOrUpdate";
-    log.info("{} {}", methodName, e);
-    boolean b = service.saveOrUpdate(e);
+    boolean b = s.removeById(id);
     return buildJsonBean(methodName, b);
   }
 
@@ -69,7 +90,15 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
     String methodName = "removeByIds";
     List<Integer> idList = LArrays.toList(ids);
     log.info("{} {}", methodName, idList);
-    boolean b = service.removeByIds(idList);
+    boolean b = s.removeByIds(idList);
+    return buildJsonBean(methodName, b);
+  }
+
+  @RequestMapping("saveOrUpdate")
+  public JsonBean<Void> saveOrUpdate(Entity e) {
+    String methodName = "saveOrUpdate";
+    log.info("{} {}", methodName, e);
+    boolean b = s.saveOrUpdate(e);
     return buildJsonBean(methodName, b);
   }
 
