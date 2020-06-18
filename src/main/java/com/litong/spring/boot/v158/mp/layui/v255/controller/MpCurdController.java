@@ -1,5 +1,6 @@
 package com.litong.spring.boot.v158.mp.layui.v255.controller;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -11,10 +12,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.litong.spring.boot.v158.mp.utils.LayuiUtils;
 import com.litong.spring.boot.v158.mp.vo.JsonBean;
 import com.litong.spring.boot.v158.mp.vo.PageJsonBean;
 import com.litong.utils.array.LArrays;
 import com.litong.utils.reflection.LReflectionUtils;
+import com.litong.utils.string.StringUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,11 +34,15 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
 
   @RequestMapping("list")
   public PageJsonBean<Entity> list(@RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
-      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, Entity e) {
+      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, Entity e, String orderBy, boolean isAsc) {
     e = LReflectionUtils.convertEmpytStringToNull(e);
     log.info("pageSize:{},pageNo:{},e {}", pageSize, pageNo, e);
     Map<String, Object> map = LReflectionUtils.convertObjectToMap(e);
     QueryWrapper<Entity> queryWrapper = new QueryWrapper<>();
+    if (orderBy != null) {
+      queryWrapper.orderBy(true, isAsc, orderBy);
+    }
+
     for (Map.Entry<String, Object> m : map.entrySet()) {
       if (m.getKey().equals("id")) {
         queryWrapper.eq("id", m.getValue());
@@ -70,7 +77,7 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
   }
 
   @RequestMapping("getById")
-  public JsonBean<Entity> get(Integer id) {
+  public JsonBean<Entity> get(String id) {
     log.info("get by id {}", id);
     Entity byId = s.getById(id);
     JsonBean<Entity> jsonBean = new JsonBean<>(byId);
@@ -78,38 +85,67 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
   }
 
   @RequestMapping("removeById")
-  public JsonBean<Void> del(Integer id) {
-    String methodName = "delete";
+  public JsonBean<Boolean> removeById(String id) {
+    String methodName = "removeById";
     log.info("{} by id {}", methodName, id);
-    boolean b = s.removeById(id);
+    boolean isNumeric = StringUtil.isNumeric(id);
+    boolean b = false;
+    if (isNumeric) {
+      b = s.removeById(Integer.parseInt(id));
+    } else {
+      b = s.removeById(id);
+    }
+
     return buildJsonBean(methodName, b);
   }
 
   @RequestMapping("removeByIds")
-  public JsonBean<Void> removeByIds(@RequestParam(value = "ids[]") int[] ids) {
+  public JsonBean<Boolean> removeByIds(@RequestParam(value = "ids[]") String[] ids) {
     String methodName = "removeByIds";
-    List<Integer> idList = LArrays.toList(ids);
-    log.info("{} {}", methodName, idList);
+    log.info("{} {}", methodName, ids);
+    if (ids.length < 1) {
+      return new JsonBean<Boolean>();
+    }
+    boolean isNumeric = StringUtil.isNumeric(ids[0]);
+    List<? extends Serializable> idList = null;
+    if (isNumeric) {
+      int[] intIds = new int[ids.length];
+      for (int i = 0; i < ids.length; i++) {
+        intIds[i] = Integer.parseInt(ids[i]);
+      }
+      idList=LArrays.toList(intIds);
+    } else {
+      idList = LArrays.toList(ids);
+    }
     boolean b = s.removeByIds(idList);
     return buildJsonBean(methodName, b);
   }
 
+  @RequestMapping("save")
+  public JsonBean<Boolean> save(Entity e) {
+    String methodName = "save";
+    log.info("{} {}", methodName, e);
+    boolean b = s.saveOrUpdate(e);
+    return buildJsonBean(methodName, b);
+  }
+
+  @RequestMapping("update")
+  public JsonBean<Boolean> update(Entity e) {
+    String methodName = "update";
+    log.info("{} {}", methodName, e);
+    boolean b = s.saveOrUpdate(e);
+    return buildJsonBean(methodName, b);
+  }
+
   @RequestMapping("saveOrUpdate")
-  public JsonBean<Void> saveOrUpdate(Entity e) {
+  public JsonBean<Boolean> saveOrUpdate(Entity e) {
     String methodName = "saveOrUpdate";
     log.info("{} {}", methodName, e);
     boolean b = s.saveOrUpdate(e);
     return buildJsonBean(methodName, b);
   }
 
-  private JsonBean<Void> buildJsonBean(String methodName, boolean b) {
-    JsonBean<Void> jsonBean = new JsonBean<>();
-    if (b) {
-      return jsonBean;
-    } else {
-      jsonBean.setCode(-1);
-      jsonBean.setMsg(methodName + " fail");
-    }
-    return jsonBean;
+  public JsonBean<Boolean> buildJsonBean(String methodName, boolean b) {
+    return LayuiUtils.buildJsonBean(methodName,b);
   }
 }

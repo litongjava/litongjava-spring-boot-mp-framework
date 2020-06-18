@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public class PageJsonBean<T> extends JsonBean<List<T>> {
 
   private long count;
