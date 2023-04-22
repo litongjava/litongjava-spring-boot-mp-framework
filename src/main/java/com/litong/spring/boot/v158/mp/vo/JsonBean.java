@@ -25,6 +25,10 @@ public class JsonBean<T> {
     this.code = code;
   }
 
+  public JsonBean(String msg) {
+    this.msg=msg;
+  }
+
   public JsonBean(int code, String msg) {
     super();
     this.code = code;

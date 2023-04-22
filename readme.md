@@ -3,7 +3,7 @@
 2.在其他项目中引入  
 ```
 <dependency>
-  <groupId>com.litong</groupId>
+  <groupId>com.litongjava</groupId>
   <artifactId>litongjava-spring-boot-mp-framework</artifactId>
   <version>1.0</version>
 </dependency>

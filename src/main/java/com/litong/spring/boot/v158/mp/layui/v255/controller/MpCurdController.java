@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import com.litong.spring.boot.v158.mp.utils.LReflectionUtils;
+import com.litong.spring.boot.v158.mp.utils.array.ListUtils;
+import com.litong.spring.boot.v158.mp.utils.string.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,9 +18,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.litong.spring.boot.v158.mp.utils.LayuiUtils;
 import com.litong.spring.boot.v158.mp.vo.JsonBean;
 import com.litong.spring.boot.v158.mp.vo.PageJsonBean;
-import com.litong.utils.array.LArrays;
-import com.litong.utils.reflection.LReflectionUtils;
-import com.litong.utils.string.StringUtil;
+
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,7 +35,7 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
 
   @RequestMapping("list")
   public PageJsonBean<Entity> list(@RequestParam(name = "pageNo", defaultValue = "1") Integer pageNo,
-      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, Entity e, String orderBy, boolean isAsc) {
+      @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize, String orderBy, boolean isAsc, Entity e) {
     e = LReflectionUtils.convertEmpytStringToNull(e);
     log.info("pageSize:{},pageNo:{},e {}", pageSize, pageNo, e);
     Map<String, Object> map = LReflectionUtils.convertObjectToMap(e);
@@ -88,7 +89,7 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
   public JsonBean<Boolean> removeById(String id) {
     String methodName = "removeById";
     log.info("{} by id {}", methodName, id);
-    boolean isNumeric = StringUtil.isNumeric(id);
+    boolean isNumeric = StringUtils.isNumeric(id);
     boolean b = false;
     if (isNumeric) {
       b = s.removeById(Integer.parseInt(id));
@@ -106,16 +107,16 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
     if (ids.length < 1) {
       return new JsonBean<Boolean>();
     }
-    boolean isNumeric = StringUtil.isNumeric(ids[0]);
+    boolean isNumeric = StringUtils.isNumeric(ids[0]);
     List<? extends Serializable> idList = null;
     if (isNumeric) {
       int[] intIds = new int[ids.length];
       for (int i = 0; i < ids.length; i++) {
         intIds[i] = Integer.parseInt(ids[i]);
       }
-      idList=LArrays.toList(intIds);
+      idList = ListUtils.toList(intIds);
     } else {
-      idList = LArrays.toList(ids);
+      idList = ListUtils.toList(ids);
     }
     boolean b = s.removeByIds(idList);
     return buildJsonBean(methodName, b);
@@ -146,6 +147,6 @@ public class MpCurdController<Service extends IService<Entity>, Entity> {
   }
 
   public JsonBean<Boolean> buildJsonBean(String methodName, boolean b) {
-    return LayuiUtils.buildJsonBean(methodName,b);
+    return LayuiUtils.buildJsonBean(methodName, b);
   }
 }
